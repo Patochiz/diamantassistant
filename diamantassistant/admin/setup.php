@@ -49,6 +49,11 @@ if ($action == 'save') {
     dolibarr_set_const($db, 'DIAMANTASSISTANT_LOG_CONVERSATIONS', (string) $logConv, 'chaine', 0, '', $conf->entity);
     dolibarr_set_const($db, 'DIAMANTASSISTANT_ENABLED_WIDGET', (string) $widgetEnabled, 'chaine', 0, '', $conf->entity);
 
+    $identityPrompt = GETPOST('identity_prompt', 'restricthtml');
+    $rulesPrompt = GETPOST('rules_prompt', 'restricthtml');
+    dolibarr_set_const($db, 'DIAMANTASSISTANT_IDENTITY_PROMPT', $identityPrompt, 'chaine', 0, '', $conf->entity);
+    dolibarr_set_const($db, 'DIAMANTASSISTANT_RULES_PROMPT', $rulesPrompt, 'chaine', 0, '', $conf->entity);
+
     setEventMessages("Configuration enregistrée.", null, 'mesgs');
 }
 
@@ -90,6 +95,41 @@ $currentLog = (int) getDolGlobalString('DIAMANTASSISTANT_LOG_CONVERSATIONS', 1);
 $currentWidget = (int) getDolGlobalString('DIAMANTASSISTANT_ENABLED_WIDGET', 1);
 $hasKey = !empty(getDolGlobalString('DIAMANTASSISTANT_MISTRAL_API_KEY', ''));
 
+$defaultIdentity = <<<TXT
+## IDENTITÉ
+
+Tu es l'assistant IA interne de **DIAMANT INDUSTRIE**, une entreprise spécialisée dans les plafonds métalliques suspendus et la sous-traitance métallique. Tu aides les 6 collaborateurs de l'entreprise à utiliser Dolibarr (ERP, version 20) au quotidien.
+
+Tu t'adresses à des utilisateurs de **niveaux informatiques très variés**. Sois toujours :
+- **Pédagogue** : explique simplement, sans jargon inutile.
+- **Concret** : donne les étapes précises dans l'interface Dolibarr (menus, boutons, onglets).
+- **Bienveillant** : jamais condescendant, même pour les questions basiques.
+- **Bref** : va droit au but. Pour les réponses longues, structure avec des listes courtes.
+
+Tu réponds **toujours en français**.
+TXT;
+
+$defaultRules = <<<TXT
+## RÈGLES DE RÉPONSE IMPORTANTES
+
+1. **Rappelle systématiquement les bons réflexes DIAMANT** quand c'est pertinent :
+   - Avant de créer un nouveau produit, **toujours vérifier** qu'il n'existe pas déjà (recherche par référence ou libellé).
+   - Pour un nouvel article acheté : créer d'abord le **produit à la vente** (fiche produit complète), puis ajouter le **produit fournisseur** dans l'onglet Fournisseurs. Ne jamais créer juste un produit fournisseur isolé.
+   - Renseigner la **description** du produit (pas seulement la référence), elle apparaîtra sur les documents.
+   - Vérifier les **catégories** pour un bon classement et les statistiques.
+
+2. **Si tu ne sais pas**, dis-le clairement. Ne jamais inventer un menu, un bouton ou une option qui n'existe pas dans Dolibarr.
+
+3. **Si la question sort de ton périmètre** (RH, juridique, compta complexe, fiscalité...), oriente la personne vers Patrice (administrateur Dolibarr) ou le bon interlocuteur.
+
+4. **Pour les actions sensibles** (suppression, validation définitive, clôture d'exercice...), rappelle systématiquement de faire une vérification ou une sauvegarde au préalable.
+
+5. Si l'utilisateur semble bloqué, propose-lui de **reformuler** ou de décrire précisément ce qu'il voit à l'écran.
+TXT;
+
+$currentIdentity = getDolGlobalString('DIAMANTASSISTANT_IDENTITY_PROMPT', $defaultIdentity);
+$currentRules = getDolGlobalString('DIAMANTASSISTANT_RULES_PROMPT', $defaultRules);
+
 print '<form method="POST" action="'.$_SERVER["PHP_SELF"].'">';
 print '<input type="hidden" name="token" value="'.newToken().'">';
 print '<input type="hidden" name="action" value="save">';
@@ -129,6 +169,16 @@ print '</td></tr>';
 
 print '<tr class="oddeven"><td>Afficher le widget de chat</td><td>';
 print '<input type="checkbox" name="widget_enabled" value="1"'.($currentWidget ? ' checked' : '').'>';
+print '</td></tr>';
+
+print '<tr class="oddeven"><td>Prompt d\'identité de l\'assistant</td><td>';
+print '<textarea name="identity_prompt" rows="12" cols="80" style="width:90%;">'.dol_escape_htmltag($currentIdentity).'</textarea>';
+print '<br><small>(Définit le nom, le ton et le rôle de l\'assistant IA. Laisser vide pour revenir au texte par défaut.)</small>';
+print '</td></tr>';
+
+print '<tr class="oddeven"><td>Règles de réponse</td><td>';
+print '<textarea name="rules_prompt" rows="15" cols="80" style="width:90%;">'.dol_escape_htmltag($currentRules).'</textarea>';
+print '<br><small>(Consignes que l\'assistant doit respecter dans ses réponses. Laisser vide pour revenir au texte par défaut.)</small>';
 print '</td></tr>';
 
 print '</table>';
