@@ -1,0 +1,4 @@
+ModuleDiamantAssistantName=DiamantAssistant
+ModuleDiamantAssistantDesc=Assistant IA interne DIAMANT pour guider les utilisateurs Dolibarr
+DiamantAssistantSetup=Configuration de DiamantAssistant
+DiamantAssistantAbout=À propos de DiamantAssistant
