@@ -24,7 +24,10 @@
             '<div id="da-chat-window" class="da-hidden">',
             '  <div id="da-chat-header">',
             '    <span>Assistant DIAMANT</span>',
-            '    <button id="da-chat-close" aria-label="Fermer">&times;</button>',
+            '    <div id="da-chat-header-actions">',
+            '      <button id="da-chat-maximize" aria-label="Agrandir" title="Agrandir">\u26F6</button>',
+            '      <button id="da-chat-close" aria-label="Fermer">&times;</button>',
+            '    </div>',
             '  </div>',
             '  <div id="da-chat-messages"></div>',
             '  <div id="da-chat-input-row">',
@@ -38,6 +41,7 @@
 
         document.getElementById('da-chat-toggle').addEventListener('click', toggleWindow);
         document.getElementById('da-chat-close').addEventListener('click', toggleWindow);
+        document.getElementById('da-chat-maximize').addEventListener('click', toggleMaximize);
         document.getElementById('da-chat-send').addEventListener('click', sendMessage);
         document.getElementById('da-chat-input').addEventListener('keydown', function (e) {
             if (e.key === 'Enter' && !e.shiftKey) {
@@ -48,6 +52,14 @@
 
         // Message d'accueil
         addMessage('assistant', 'Bonjour ! Je suis l\'assistant DIAMANT. Posez-moi vos questions sur Dolibarr ou sur nos process internes.');
+    }
+
+    function toggleMaximize() {
+        var win = document.getElementById('da-chat-window');
+        var btn = document.getElementById('da-chat-maximize');
+        win.classList.toggle('da-maximized');
+        btn.textContent = win.classList.contains('da-maximized') ? '\u29C9' : '\u26F6';
+        btn.title = win.classList.contains('da-maximized') ? 'R\u00e9duire' : 'Agrandir';
     }
 
     function toggleWindow() {
