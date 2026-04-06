@@ -19,7 +19,7 @@ function diamantassistant_get_widget_html(): string
     if ((int) getDolGlobalString('DIAMANTASSISTANT_ENABLED_WIDGET', 1) !== 1) {
         return '';
     }
-    if (empty($user->rights->diamantassistant->use) && empty($user->admin)) {
+    if (!$user->hasRight('diamantassistant', 'use') && empty($user->admin)) {
         return '';
     }
 

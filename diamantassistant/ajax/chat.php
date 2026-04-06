@@ -22,9 +22,9 @@ if (!$res) {
     die("Include of main fails");
 }
 
-require_once dol_buildpath('/diamantassistant/class/diamantassistant.class.php', 0);
-require_once dol_buildpath('/diamantassistant/class/contextbuilder.class.php', 0);
-require_once dol_buildpath('/diamantassistant/core/lib/providers/ProviderFactory.class.php', 0);
+dol_include_once('/diamantassistant/class/diamantassistant.class.php');
+dol_include_once('/diamantassistant/class/contextbuilder.class.php');
+dol_include_once('/diamantassistant/core/lib/providers/ProviderFactory.class.php');
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -34,7 +34,7 @@ if (empty($user->id)) {
     echo json_encode(['error' => 'Utilisateur non authentifié.']);
     exit;
 }
-if (empty($user->rights->diamantassistant->use) && empty($user->admin)) {
+if (!$user->hasRight('diamantassistant', 'use') && empty($user->admin)) {
     http_response_code(403);
     echo json_encode(['error' => 'Vous n\'avez pas la permission d\'utiliser l\'assistant.']);
     exit;
