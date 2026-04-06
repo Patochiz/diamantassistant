@@ -6,10 +6,12 @@
  * Reçoit une question, appelle le provider IA, renvoie la réponse en JSON.
  */
 
-// Chargement de Dolibarr (remonte jusqu'à trouver main.inc.php)
-if (!defined('NOTOKENRENEWAL')) {
-    define('NOTOKENRENEWAL', 1);
-}
+// Constantes obligatoires pour un endpoint AJAX POST Dolibarr
+if (!defined('NOTOKENRENEWAL')) define('NOTOKENRENEWAL', 1);
+if (!defined('NOREQUIREMENU'))  define('NOREQUIREMENU', 1);
+if (!defined('NOREQUIREHTML'))  define('NOREQUIREHTML', 1);
+if (!defined('NOREQUIREAJAX'))  define('NOREQUIREAJAX', 1);
+if (!defined('NOCSRFCHECK'))    define('NOCSRFCHECK', 1);
 
 $res = 0;
 if (!$res && file_exists("../../../main.inc.php")) {
@@ -22,9 +24,9 @@ if (!$res) {
     die("Include of main fails");
 }
 
-require_once DOL_DOCUMENT_ROOT.'/custom/diamantassistant/class/diamantassistant.class.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/diamantassistant/class/contextbuilder.class.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/diamantassistant/core/lib/providers/ProviderFactory.class.php';
+dol_include_once('/diamantassistant/class/diamantassistant.class.php');
+dol_include_once('/diamantassistant/class/contextbuilder.class.php');
+dol_include_once('/diamantassistant/core/lib/providers/ProviderFactory.class.php');
 
 header('Content-Type: application/json; charset=utf-8');
 
@@ -34,7 +36,7 @@ if (empty($user->id)) {
     echo json_encode(['error' => 'Utilisateur non authentifié.']);
     exit;
 }
-if (empty($user->rights->diamantassistant->use) && empty($user->admin)) {
+if (!$user->hasRight('diamantassistant', 'use') && empty($user->admin)) {
     http_response_code(403);
     echo json_encode(['error' => 'Vous n\'avez pas la permission d\'utiliser l\'assistant.']);
     exit;

@@ -17,7 +17,7 @@ if (!$res) {
 }
 
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/diamantassistant/core/lib/providers/ProviderFactory.class.php';
+dol_include_once('/diamantassistant/core/lib/providers/ProviderFactory.class.php');
 
 $langs->loadLangs(array("admin", "diamantassistant@diamantassistant"));
 

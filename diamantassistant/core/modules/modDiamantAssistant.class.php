@@ -61,10 +61,7 @@ class modDiamantAssistant extends DolibarrModules
 
         // Enregistrement du hook manager pour injecter le widget dans toutes les pages
         $this->module_parts = array(
-            'hooks' => array(
-                'data' => array('main', 'toprightmenu'),
-                'entity' => '0',
-            ),
+            'hooks' => array('main', 'toprightmenu'),
         );
 
         // Constants to add when module is enabled
