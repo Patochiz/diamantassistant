@@ -50,14 +50,28 @@
     align-items: center;
     font-weight: 600;
 }
+#da-chat-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+#da-chat-maximize,
 #da-chat-close {
     background: none;
     border: none;
     color: white;
-    font-size: 24px;
+    font-size: 20px;
     cursor: pointer;
     line-height: 1;
     padding: 0 4px;
+}
+#da-chat-close { font-size: 24px; }
+#da-chat-maximize:hover,
+#da-chat-close:hover { opacity: 0.7; }
+
+#da-chat-window.da-maximized {
+    width: calc(100vw - 40px);
+    height: calc(100vh - 100px);
 }
 
 #da-chat-messages {
