@@ -6,7 +6,7 @@
  * via le hook printTopRightMenu (ou équivalent selon version).
  */
 
-require_once DOL_DOCUMENT_ROOT.'/custom/diamantassistant/core/lib/diamantassistant.lib.php';
+require_once dol_buildpath('/diamantassistant/core/lib/diamantassistant.lib.php', 0);
 
 class ActionsDiamantAssistant
 {

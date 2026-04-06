@@ -11,7 +11,7 @@ class ContextBuilder
 
     public function __construct(?string $knowledgeDir = null)
     {
-        $this->knowledgeDir = $knowledgeDir ?? DOL_DOCUMENT_ROOT.'/custom/diamantassistant/knowledge';
+        $this->knowledgeDir = $knowledgeDir ?? dol_buildpath('/diamantassistant/knowledge', 0);
     }
 
     /**

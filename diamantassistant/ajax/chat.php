@@ -22,9 +22,9 @@ if (!$res) {
     die("Include of main fails");
 }
 
-require_once DOL_DOCUMENT_ROOT.'/custom/diamantassistant/class/diamantassistant.class.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/diamantassistant/class/contextbuilder.class.php';
-require_once DOL_DOCUMENT_ROOT.'/custom/diamantassistant/core/lib/providers/ProviderFactory.class.php';
+require_once dol_buildpath('/diamantassistant/class/diamantassistant.class.php', 0);
+require_once dol_buildpath('/diamantassistant/class/contextbuilder.class.php', 0);
+require_once dol_buildpath('/diamantassistant/core/lib/providers/ProviderFactory.class.php', 0);
 
 header('Content-Type: application/json; charset=utf-8');
 
