@@ -172,12 +172,12 @@ print '<input type="checkbox" name="widget_enabled" value="1"'.($currentWidget ?
 print '</td></tr>';
 
 print '<tr class="oddeven"><td>Prompt d\'identité de l\'assistant</td><td>';
-print '<textarea name="identity_prompt" rows="12" cols="80" style="width:90%;">'.dol_escape_htmltag($currentIdentity).'</textarea>';
+print '<textarea name="identity_prompt" rows="12" cols="80" style="width:90%;">'.dol_escape_htmltag($currentIdentity, 0, 1).'</textarea>';
 print '<br><small>(Définit le nom, le ton et le rôle de l\'assistant IA. Laisser vide pour revenir au texte par défaut.)</small>';
 print '</td></tr>';
 
 print '<tr class="oddeven"><td>Règles de réponse</td><td>';
-print '<textarea name="rules_prompt" rows="15" cols="80" style="width:90%;">'.dol_escape_htmltag($currentRules).'</textarea>';
+print '<textarea name="rules_prompt" rows="15" cols="80" style="width:90%;">'.dol_escape_htmltag($currentRules, 0, 1).'</textarea>';
 print '<br><small>(Consignes que l\'assistant doit respecter dans ses réponses. Laisser vide pour revenir au texte par défaut.)</small>';
 print '</td></tr>';
 
