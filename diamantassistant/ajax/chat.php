@@ -26,6 +26,7 @@ if (!$res) {
 
 dol_include_once('/diamantassistant/class/diamantassistant.class.php');
 dol_include_once('/diamantassistant/class/contextbuilder.class.php');
+dol_include_once('/diamantassistant/class/databasetools.class.php');
 dol_include_once('/diamantassistant/core/lib/providers/ProviderFactory.class.php');
 
 header('Content-Type: application/json; charset=utf-8');
@@ -99,11 +100,17 @@ if ($conversationId > 0 && $logEnabled) {
 $builder = new ContextBuilder();
 $messages = $builder->build($user, $question, $history, $pageContext);
 
-// --- Appel au provider
+// --- Appel au provider avec accès base de données en lecture seule
 try {
-    $provider = ProviderFactory::get();
-    $reply = $provider->chat($messages);
-    $tokensUsed = $provider->getLastTokensUsed();
+    $provider     = ProviderFactory::get();
+    $toolExecutor = function (string $toolName, array $args) use ($db, $conf) {
+        return DatabaseTools::execute($toolName, $args, $db, $conf);
+    };
+    $reply        = $provider->chat($messages, [
+        'tools'        => DatabaseTools::getToolDefinitions(),
+        'tool_executor' => $toolExecutor,
+    ]);
+    $tokensUsed   = $provider->getLastTokensUsed();
     $providerName = $provider->getName();
 } catch (Exception $e) {
     dol_syslog("DiamantAssistant chat error: ".$e->getMessage(), LOG_ERR);

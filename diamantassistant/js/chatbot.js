@@ -91,6 +91,14 @@
         html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
         // `code`
         html = html.replace(/`(.+?)`/g, '<code>$1</code>');
+        // Liens [texte](url) — fonction pour pouvoir trimmer l'URL
+        html = html.replace(/\[([^\]]+)\]\s*\(([^)]+)\)/g, function (match, linkText, url) {
+            url = url.replace(/\s+/g, '');
+            if (url.indexOf('http://') === 0 || url.indexOf('https://') === 0) {
+                return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + linkText + '</a>';
+            }
+            return match;
+        });
         // Listes en tirets simples (ligne par ligne)
         html = html.replace(/(^|\n)[\-\*] (.+)/g, '$1• $2');
         // Retours ligne
