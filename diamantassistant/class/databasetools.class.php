@@ -132,11 +132,11 @@ class DatabaseTools
         }
 
         $entity  = (int) $conf->entity;
-        $escaped = $db->escape($reference);
+        $escaped = $db->escape(str_replace(['%', '_'], ['\\%', '\\_'], $reference));
 
         $sql = "SELECT c.ref,";
         $sql .= " DATE_FORMAT(c.date_commande, '%d/%m/%Y') AS date_cmd,";
-        $sql .= " c.total_ht, c.total_ttc, c.status,";
+        $sql .= " c.total_ht, c.total_ttc, c.fk_statut AS status,";
         $sql .= " s.nom AS client";
         $sql .= " FROM ".MAIN_DB_PREFIX."commande c";
         $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe s ON s.rowid = c.fk_soc";
@@ -174,7 +174,7 @@ class DatabaseTools
         }
 
         $entity  = (int) $conf->entity;
-        $escaped = $db->escape($reference);
+        $escaped = $db->escape(str_replace(['%', '_'], ['\\%', '\\_'], $reference));
 
         $sql = "SELECT f.ref,";
         $sql .= " DATE_FORMAT(f.datef, '%d/%m/%Y') AS date_facture,";
@@ -219,11 +219,11 @@ class DatabaseTools
         }
 
         $entity  = (int) $conf->entity;
-        $escaped = $db->escape($reference);
+        $escaped = $db->escape(str_replace(['%', '_'], ['\\%', '\\_'], $reference));
 
         $sql = "SELECT cf.ref,";
         $sql .= " DATE_FORMAT(cf.date_commande, '%d/%m/%Y') AS date_cmd,";
-        $sql .= " cf.total_ht, cf.total_ttc, cf.status,";
+        $sql .= " cf.total_ht, cf.total_ttc, cf.fk_statut AS status,";
         $sql .= " s.nom AS fournisseur";
         $sql .= " FROM ".MAIN_DB_PREFIX."commande_fournisseur cf";
         $sql .= " LEFT JOIN ".MAIN_DB_PREFIX."societe s ON s.rowid = cf.fk_soc";
@@ -275,7 +275,7 @@ class DatabaseTools
         $sql .= " SUM(f.total_ttc) AS ca_ttc,";
         $sql .= " COUNT(*) AS nb_factures";
         $sql .= " FROM ".MAIN_DB_PREFIX."facture f";
-        $sql .= " WHERE f.fk_statut IN (1, 2)";
+        $sql .= " WHERE f.fk_statut = 1";
         $sql .= " AND YEAR(f.datef) = ".$year;
         $sql .= " AND MONTH(f.datef) = ".$month;
         $sql .= " AND f.entity = ".$entity;
