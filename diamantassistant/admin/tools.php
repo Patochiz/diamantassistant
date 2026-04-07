@@ -29,6 +29,22 @@ if (!$user->admin) {
 $action = GETPOST('action', 'aZ09');
 $id     = (int) GETPOST('id', 'int');
 
+// --- Création automatique de la table si elle n'existe pas encore ---
+// (Le module était peut-être déjà installé avant l'ajout de cette table)
+$db->query("CREATE TABLE IF NOT EXISTS ".MAIN_DB_PREFIX."diamantassistant_tool (
+    rowid             INTEGER AUTO_INCREMENT PRIMARY KEY,
+    name              VARCHAR(100) NOT NULL,
+    label             VARCHAR(255) NOT NULL,
+    description       TEXT NOT NULL,
+    sql_query         TEXT NOT NULL,
+    parameters        TEXT NOT NULL DEFAULT '[]',
+    active            TINYINT DEFAULT 1 NOT NULL,
+    date_creation     DATETIME NOT NULL,
+    date_modification DATETIME DEFAULT NULL,
+    fk_user_creat     INTEGER DEFAULT NULL
+) ENGINE=innodb");
+$db->query("ALTER TABLE ".MAIN_DB_PREFIX."diamantassistant_tool ADD UNIQUE INDEX uk_da_tool_name (name)");
+
 // ============================================================
 // Actions
 // ============================================================
