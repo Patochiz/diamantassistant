@@ -92,7 +92,7 @@
         // `code`
         html = html.replace(/`(.+?)`/g, '<code>$1</code>');
         // Liens [texte](url)
-        html = html.replace(/\[([^\]]+)\]\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+        html = html.replace(/\[([^\]]+)\]\s*\((https?:\/\/[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
         // Listes en tirets simples (ligne par ligne)
         html = html.replace(/(^|\n)[\-\*] (.+)/g, '$1• $2');
         // Retours ligne
