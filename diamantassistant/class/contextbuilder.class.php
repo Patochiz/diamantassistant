@@ -79,6 +79,11 @@ class ContextBuilder
 
     private function getIdentitySection(): string
     {
+        $custom = getDolGlobalString('DIAMANTASSISTANT_IDENTITY_PROMPT', '');
+        if (!empty($custom)) {
+            return $custom;
+        }
+
         return <<<TXT
 ## IDENTITÉ
 
@@ -96,6 +101,11 @@ TXT;
 
     private function getRulesSection(): string
     {
+        $custom = getDolGlobalString('DIAMANTASSISTANT_RULES_PROMPT', '');
+        if (!empty($custom)) {
+            return $custom;
+        }
+
         return <<<TXT
 ## RÈGLES DE RÉPONSE IMPORTANTES
 
