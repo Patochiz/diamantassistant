@@ -147,5 +147,12 @@ print '<br><div class="opacitymedium">';
 print '<strong>Base de connaissance :</strong> déposez vos fichiers <code>.md</code> dans <code>htdocs/custom/diamantassistant/knowledge/</code>. Ils seront automatiquement chargés dans le prompt système à chaque conversation.';
 print '</div>';
 
+print '<br>';
+print '<div style="padding:12px;background:#f0f4ff;border:1px solid #c0cfe8;border-radius:4px">';
+print '<strong>Outils de recherche personnalisés</strong><br>';
+print 'Définissez vos propres requêtes SQL en lecture seule que l\'IA pourra utiliser.';
+print ' <a href="tools.php" class="button" style="margin-left:10px">Gérer les outils →</a>';
+print '</div>';
+
 llxFooter();
 $db->close();
