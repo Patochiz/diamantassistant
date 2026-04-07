@@ -107,7 +107,7 @@ try {
         return DatabaseTools::execute($toolName, $args, $db, $conf);
     };
     $reply        = $provider->chat($messages, [
-        'tools'        => DatabaseTools::getToolDefinitions(),
+        'tools'        => DatabaseTools::getToolDefinitions($db),
         'tool_executor' => $toolExecutor,
     ]);
     $tokensUsed   = $provider->getLastTokensUsed();

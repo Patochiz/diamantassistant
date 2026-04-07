@@ -10,12 +10,14 @@ class DatabaseTools
 {
     /**
      * Retourne les définitions d'outils au format JSON attendu par l'API Mistral (OpenAI-compatible).
+     * Inclut les outils natifs + les outils personnalisés actifs chargés depuis la base de données.
      *
+     * @param object|null $db  Objet DoliDB (pour charger les outils dynamiques)
      * @return array
      */
-    public static function getToolDefinitions(): array
+    public static function getToolDefinitions($db = null): array
     {
-        return [
+        $staticTools = [
             [
                 'type' => 'function',
                 'function' => [
@@ -89,6 +91,59 @@ class DatabaseTools
                 ],
             ],
         ];
+
+        if ($db !== null) {
+            $dynamicTools = self::loadDynamicToolDefinitions($db);
+            return array_merge($staticTools, $dynamicTools);
+        }
+
+        return $staticTools;
+    }
+
+    /**
+     * Charge les définitions des outils personnalisés actifs depuis la base de données.
+     *
+     * @param object $db
+     * @return array
+     */
+    private static function loadDynamicToolDefinitions($db): array
+    {
+        $tools = [];
+        $sql   = "SELECT name, description, parameters FROM ".MAIN_DB_PREFIX."diamantassistant_tool WHERE active = 1 ORDER BY name";
+        $resql = $db->query($sql);
+        if (!$resql) {
+            return [];  // Table inexistante ou erreur — ne pas bloquer le chat
+        }
+        while ($obj = $db->fetch_object($resql)) {
+            $params     = json_decode($obj->parameters ?: '[]', true) ?? [];
+            $properties = [];
+            $required   = [];
+            foreach ($params as $p) {
+                $pName = (string) ($p['name'] ?? '');
+                if (empty($pName)) continue;
+                $properties[$pName] = [
+                    'type'        => (($p['type'] ?? 'string') === 'integer') ? 'integer' : 'string',
+                    'description' => (string) ($p['description'] ?? ''),
+                ];
+                if (!empty($p['required'])) {
+                    $required[] = $pName;
+                }
+            }
+            $tools[] = [
+                'type' => 'function',
+                'function' => [
+                    'name'        => $obj->name,
+                    'description' => $obj->description,
+                    'parameters'  => [
+                        'type'       => 'object',
+                        'properties' => $properties,
+                        'required'   => $required,
+                    ],
+                ],
+            ];
+        }
+        $db->free($resql);
+        return $tools;
     }
 
     /**
@@ -114,7 +169,8 @@ class DatabaseTools
                 case 'get_monthly_revenue':
                     return self::getMonthlyRevenue((int) ($args['year'] ?? 0), (int) ($args['month'] ?? 0), $db, $conf);
                 default:
-                    return json_encode(['error' => 'Outil inconnu : '.$toolName]);
+                    // Outil non natif : chercher dans les outils personnalisés
+                    return self::executeDynamicTool($toolName, $args, $db, $conf);
             }
         } catch (Exception $e) {
             dol_syslog('DiamantAssistant DatabaseTools error ('.$toolName.'): '.$e->getMessage(), LOG_ERR);
@@ -308,6 +364,61 @@ class DatabaseTools
             'nb_factures'  => $nb,
             'note'         => 'Basé sur les factures validées et payées (brouillons et annulées exclus).',
         ]);
+    }
+
+    /**
+     * Exécute un outil personnalisé défini en base de données.
+     * Substitue les placeholders {param} et {entity} dans la requête SQL.
+     *
+     * @param string $toolName
+     * @param array  $args
+     * @param object $db
+     * @param object $conf
+     * @return string JSON
+     * @throws Exception
+     */
+    private static function executeDynamicTool(string $toolName, array $args, $db, $conf): string
+    {
+        $escaped = $db->escape($toolName);
+        $resql   = $db->query("SELECT sql_query, parameters FROM ".MAIN_DB_PREFIX."diamantassistant_tool WHERE name = '".$escaped."' AND active = 1");
+        if (!$resql || !($obj = $db->fetch_object($resql))) {
+            return json_encode(['error' => 'Outil inconnu ou inactif : '.$toolName]);
+        }
+        $db->free($resql);
+
+        $sqlQuery = (string) $obj->sql_query;
+        $params   = json_decode((string) $obj->parameters, true) ?? [];
+
+        // Vérification de sécurité (normalement déjà validé à la saisie)
+        if (!preg_match('/^\s*SELECT\b/i', $sqlQuery) || strpos($sqlQuery, ';') !== false) {
+            return json_encode(['error' => 'Requête non autorisée.']);
+        }
+
+        // Substituer {entity}
+        $sqlQuery = str_replace('{entity}', (int) $conf->entity, $sqlQuery);
+
+        // Substituer les paramètres déclarés
+        foreach ($params as $p) {
+            $pName = (string) ($p['name'] ?? '');
+            if (empty($pName)) continue;
+            $pType  = ($p['type'] ?? 'string') === 'integer' ? 'integer' : 'string';
+            $pValue = $args[$pName] ?? '';
+            if ($pType === 'integer') {
+                $sqlQuery = str_replace('{'.$pName.'}', intval($pValue), $sqlQuery);
+            } else {
+                $safeVal  = $db->escape(str_replace(['%', '_'], ['\\%', '\\_'], (string) $pValue));
+                $sqlQuery = str_replace('{'.$pName.'}', $safeVal, $sqlQuery);
+            }
+        }
+
+        // Ajouter LIMIT si absent
+        if (!preg_match('/\bLIMIT\s+\d+/i', $sqlQuery)) {
+            $sqlQuery .= ' LIMIT 20';
+        }
+
+        return self::runQuery($sqlQuery, $db, 'résultats', function ($row) {
+            return (array) $row;
+        });
     }
 
     /**
