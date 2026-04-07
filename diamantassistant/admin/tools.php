@@ -29,9 +29,8 @@ if (!$user->admin) {
 $action = GETPOST('action', 'aZ09');
 $id     = (int) GETPOST('id', 'int');
 
-// --- Création automatique de la table si elle n'existe pas encore ---
-// (Le module était peut-être déjà installé avant l'ajout de cette table)
-$db->query("CREATE TABLE IF NOT EXISTS ".MAIN_DB_PREFIX."diamantassistant_tool (
+// --- Vérifier si la table existe, la créer si besoin ---
+$daToolTableSql = "CREATE TABLE IF NOT EXISTS ".MAIN_DB_PREFIX."diamantassistant_tool (
     rowid             INTEGER AUTO_INCREMENT PRIMARY KEY,
     name              VARCHAR(100) NOT NULL,
     label             VARCHAR(255) NOT NULL,
@@ -42,8 +41,38 @@ $db->query("CREATE TABLE IF NOT EXISTS ".MAIN_DB_PREFIX."diamantassistant_tool (
     date_creation     DATETIME NOT NULL,
     date_modification DATETIME DEFAULT NULL,
     fk_user_creat     INTEGER DEFAULT NULL
-) ENGINE=innodb");
-$db->query("ALTER TABLE ".MAIN_DB_PREFIX."diamantassistant_tool ADD UNIQUE INDEX uk_da_tool_name (name)");
+) ENGINE=innodb";
+
+$daToolTableExists = false;
+$daToolCreateError = '';
+$chk = $db->query("SHOW TABLES LIKE '".MAIN_DB_PREFIX."diamantassistant_tool'");
+if ($chk && $db->fetch_object($chk)) {
+    $daToolTableExists = true;
+} else {
+    // Tentative de création automatique
+    $db->begin();
+    $resCreate = $db->query($daToolTableSql);
+    if ($resCreate) {
+        // Ignore error on ADD INDEX (may already exist)
+        $db->query("ALTER TABLE ".MAIN_DB_PREFIX."diamantassistant_tool ADD UNIQUE INDEX uk_da_tool_name (name)");
+        $db->commit();
+        $daToolTableExists = true;
+    } else {
+        $daToolCreateError = $db->lasterror();
+        $db->rollback();
+    }
+}
+
+if ($action === 'create_table') {
+    if ($db->query($daToolTableSql)) {
+        $db->query("ALTER TABLE ".MAIN_DB_PREFIX."diamantassistant_tool ADD UNIQUE INDEX uk_da_tool_name (name)");
+        setEventMessages("Table créée avec succès.", null, 'mesgs');
+    } else {
+        setEventMessages("Échec : ".$db->lasterror(), null, 'errors');
+    }
+    header('Location: '.$_SERVER['PHP_SELF']);
+    exit;
+}
 
 // ============================================================
 // Actions
@@ -302,6 +331,35 @@ if ($action === 'create' || ($action === 'edit' && $currentTool)) {
     // ----------------------------------------------------------------
     // LISTE
     // ----------------------------------------------------------------
+
+    if (!$daToolTableExists) {
+        print '<div class="error" style="margin-bottom:12px">';
+        print '<strong>La table des outils n\'existe pas encore.</strong><br>';
+        if ($daToolCreateError) {
+            print 'La création automatique a échoué : <code>'.dol_escape_htmltag($daToolCreateError).'</code><br>';
+        }
+        print 'Créez-la manuellement via <em>Accueil → Outils → SQL</em> en exécutant&nbsp;:';
+        print '<pre style="background:#fff;padding:8px;border:1px solid #ddd;margin:8px 0;font-size:12px">CREATE TABLE IF NOT EXISTS '.MAIN_DB_PREFIX.'diamantassistant_tool (
+    rowid             INTEGER AUTO_INCREMENT PRIMARY KEY,
+    name              VARCHAR(100) NOT NULL,
+    label             VARCHAR(255) NOT NULL,
+    description       TEXT NOT NULL,
+    sql_query         TEXT NOT NULL,
+    parameters        TEXT NOT NULL DEFAULT \'[]\',
+    active            TINYINT DEFAULT 1 NOT NULL,
+    date_creation     DATETIME NOT NULL,
+    date_modification DATETIME DEFAULT NULL,
+    fk_user_creat     INTEGER DEFAULT NULL
+) ENGINE=innodb;
+ALTER TABLE '.MAIN_DB_PREFIX.'diamantassistant_tool ADD UNIQUE INDEX uk_da_tool_name (name);</pre>';
+        print '<form method="POST" action="'.$_SERVER['PHP_SELF'].'">';
+        print '<input type="hidden" name="token" value="'.newToken().'">';
+        print '<input type="hidden" name="action" value="create_table">';
+        print '<input type="submit" class="button" value="Réessayer la création automatique">';
+        print '</form>';
+        print '</div>';
+    } else {
+
     print '<div style="margin-bottom:12px">';
     print '<a href="'.$_SERVER['PHP_SELF'].'?action=create" class="button">+ Nouvel outil</a>';
     print '</div>';
@@ -345,6 +403,8 @@ if ($action === 'create' || ($action === 'edit' && $currentTool)) {
         print '</table>';
         $db->free($resql);
     }
+
+    } // end if ($daToolTableExists)
 }
 
 print dol_get_fiche_end();
