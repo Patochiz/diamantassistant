@@ -6,7 +6,7 @@ CREATE TABLE IF NOT EXISTS llx_diamantassistant_tool (
     label             VARCHAR(255) NOT NULL,
     description       TEXT NOT NULL,
     sql_query         TEXT NOT NULL,
-    parameters        TEXT NOT NULL DEFAULT '[]',
+    parameters        TEXT NOT NULL,
     active            TINYINT DEFAULT 1 NOT NULL,
     date_creation     DATETIME NOT NULL,
     date_modification DATETIME DEFAULT NULL,

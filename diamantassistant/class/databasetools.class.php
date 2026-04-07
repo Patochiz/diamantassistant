@@ -115,7 +115,7 @@ class DatabaseTools
             return [];  // Table inexistante ou erreur — ne pas bloquer le chat
         }
         while ($obj = $db->fetch_object($resql)) {
-            $params     = json_decode($obj->parameters, true) ?? [];
+            $params     = json_decode($obj->parameters ?: '[]', true) ?? [];
             $properties = [];
             $required   = [];
             foreach ($params as $p) {

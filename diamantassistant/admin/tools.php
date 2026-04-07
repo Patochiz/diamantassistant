@@ -36,7 +36,7 @@ $daToolTableSql = "CREATE TABLE IF NOT EXISTS ".MAIN_DB_PREFIX."diamantassistant
     label             VARCHAR(255) NOT NULL,
     description       TEXT NOT NULL,
     sql_query         TEXT NOT NULL,
-    parameters        TEXT NOT NULL DEFAULT '[]',
+    parameters        TEXT NOT NULL,
     active            TINYINT DEFAULT 1 NOT NULL,
     date_creation     DATETIME NOT NULL,
     date_modification DATETIME DEFAULT NULL,
@@ -244,7 +244,7 @@ if ($action === 'create' || ($action === 'edit' && $currentTool)) {
     print '<td><textarea name="sql_query" rows="7" style="width:100%;font-family:monospace;font-size:12px">'.$sqlVal.'</textarea></td></tr>';
 
     // --- Paramètres
-    $paramsJson = $isEdit ? dol_escape_htmltag($t->parameters) : '[]';
+    $paramsJson = $isEdit ? dol_escape_htmltag($t->parameters ?: '[]') : '[]';
     print '<tr class="oddeven">';
     print '<td style="vertical-align:top"><strong>Paramètres</strong><br>';
     print '<small>Correspondent aux <code>{placeholders}</code><br>dans la requête SQL.<br>';
