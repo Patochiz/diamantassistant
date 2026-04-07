@@ -134,7 +134,7 @@ class DatabaseTools
         $entity  = (int) $conf->entity;
         $escaped = $db->escape(str_replace(['%', '_'], ['\\%', '\\_'], $reference));
 
-        $sql = "SELECT c.ref,";
+        $sql = "SELECT c.rowid, c.ref,";
         $sql .= " DATE_FORMAT(c.date_commande, '%d/%m/%Y') AS date_cmd,";
         $sql .= " c.total_ht, c.total_ttc, c.fk_statut AS status,";
         $sql .= " s.nom AS client";
@@ -160,6 +160,7 @@ class DatabaseTools
                 'total_ht' => number_format((float) $obj->total_ht, 2, ',', ' ').' €',
                 'total_ttc'=> number_format((float) $obj->total_ttc, 2, ',', ' ').' €',
                 'statut'   => $statuts[(int) $obj->status] ?? 'Statut '.$obj->status,
+                'url'      => dol_buildpath('/commande/card.php', 2).'?id='.(int) $obj->rowid,
             ];
         });
     }
@@ -176,7 +177,7 @@ class DatabaseTools
         $entity  = (int) $conf->entity;
         $escaped = $db->escape(str_replace(['%', '_'], ['\\%', '\\_'], $reference));
 
-        $sql = "SELECT f.ref,";
+        $sql = "SELECT f.rowid, f.ref,";
         $sql .= " DATE_FORMAT(f.datef, '%d/%m/%Y') AS date_facture,";
         $sql .= " f.total_ht, f.total_ttc, f.fk_statut, f.paye,";
         $sql .= " s.nom AS client";
@@ -205,6 +206,7 @@ class DatabaseTools
                 'total_ht'  => number_format((float) $obj->total_ht, 2, ',', ' ').' €',
                 'total_ttc' => number_format((float) $obj->total_ttc, 2, ',', ' ').' €',
                 'statut'    => $statut,
+                'url'       => dol_buildpath('/compta/facture/card.php', 2).'?id='.(int) $obj->rowid,
             ];
         });
     }
@@ -221,7 +223,7 @@ class DatabaseTools
         $entity  = (int) $conf->entity;
         $escaped = $db->escape(str_replace(['%', '_'], ['\\%', '\\_'], $reference));
 
-        $sql = "SELECT cf.ref,";
+        $sql = "SELECT cf.rowid, cf.ref,";
         $sql .= " DATE_FORMAT(cf.date_commande, '%d/%m/%Y') AS date_cmd,";
         $sql .= " cf.total_ht, cf.total_ttc, cf.fk_statut AS status,";
         $sql .= " s.nom AS fournisseur";
@@ -252,6 +254,7 @@ class DatabaseTools
                 'total_ht'    => number_format((float) $obj->total_ht, 2, ',', ' ').' €',
                 'total_ttc'   => number_format((float) $obj->total_ttc, 2, ',', ' ').' €',
                 'statut'      => $statuts[(int) $obj->status] ?? 'Statut '.$obj->status,
+                'url'         => dol_buildpath('/fourn/commande/card.php', 2).'?id='.(int) $obj->rowid,
             ];
         });
     }
