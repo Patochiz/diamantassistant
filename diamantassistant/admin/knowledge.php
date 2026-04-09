@@ -23,6 +23,7 @@ if (!$res) {
 }
 
 require_once DOL_DOCUMENT_ROOT.'/core/lib/admin.lib.php';
+dol_include_once('/diamantassistant/class/contextbuilder.class.php');
 
 $langs->loadLangs(array("admin", "diamantassistant@diamantassistant"));
 
@@ -33,35 +34,6 @@ if (!$user->admin) {
 $action = GETPOST('action', 'aZ09');
 
 $knowledgeDir = dol_buildpath('/diamantassistant/knowledge', 0);
-
-/**
- * Normalise et valide un nom de fichier .md pour la base de connaissance.
- *
- * Règles :
- *  - Retire une éventuelle extension .md (insensible à la casse)
- *  - Autorise uniquement [A-Za-z0-9_-]
- *  - Longueur du basename : 1 à 64 caractères
- *  - Rajoute systématiquement .md à la fin
- *
- * @param string $raw Valeur brute saisie par l'utilisateur
- * @return string|null Nom de fichier validé (ex: "foo.md") ou null si invalide
- */
-function diamantAssistantSanitizeKnowledgeFilename(string $raw): ?string
-{
-    $name = trim($raw);
-    if ($name === '') {
-        return null;
-    }
-    // Retirer .md final éventuel
-    if (preg_match('/\.md$/i', $name)) {
-        $name = substr($name, 0, -3);
-    }
-    // Interdire tout séparateur / caractère hors whitelist
-    if (!preg_match('/^[A-Za-z0-9_-]{1,64}$/', $name)) {
-        return null;
-    }
-    return $name.'.md';
-}
 
 /**
  * Vérifie qu'un chemin cible reste bien à l'intérieur du dossier knowledge.
@@ -96,7 +68,7 @@ if ($action === 'save') {
     $rawName  = GETPOST('file', 'alphanohtml');
     $content  = GETPOST('content', 'restricthtml');
 
-    $filename = diamantAssistantSanitizeKnowledgeFilename((string) $rawName);
+    $filename = ContextBuilder::sanitizeKnowledgeFilename((string) $rawName);
     if ($filename === null) {
         setEventMessages("Nom de fichier invalide. Utilisez uniquement lettres, chiffres, tirets et underscores (max 64 caractères).", null, 'errors');
         header('Location: '.$_SERVER['PHP_SELF'].'?action='.($isCreate ? 'new' : 'edit').'&file='.urlencode((string) $rawName));
@@ -139,7 +111,7 @@ $currentFile    = null;
 $currentContent = '';
 
 if ($action === 'edit') {
-    $filename = diamantAssistantSanitizeKnowledgeFilename((string) GETPOST('file', 'alphanohtml'));
+    $filename = ContextBuilder::sanitizeKnowledgeFilename((string) GETPOST('file', 'alphanohtml'));
     if ($filename === null) {
         setEventMessages("Nom de fichier invalide.", null, 'errors');
         header('Location: '.$_SERVER['PHP_SELF']);
