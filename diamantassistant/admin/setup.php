@@ -193,8 +193,11 @@ print '</form>';
 
 print dol_get_fiche_end();
 
-print '<br><div class="opacitymedium">';
-print '<strong>Base de connaissance :</strong> déposez vos fichiers <code>.md</code> dans <code>htdocs/custom/diamantassistant/knowledge/</code>. Ils seront automatiquement chargés dans le prompt système à chaque conversation.';
+print '<br>';
+print '<div style="padding:12px;background:#f0f4ff;border:1px solid #c0cfe8;border-radius:4px">';
+print '<strong>Base de connaissance</strong><br>';
+print 'Éditez les fichiers <code>.md</code> qui sont injectés dans le prompt système à chaque conversation, ou déposez-les par FTP dans <code>htdocs/custom/diamantassistant/knowledge/</code>.';
+print ' <a href="knowledge.php" class="button" style="margin-left:10px">Gérer la base de connaissance →</a>';
 print '</div>';
 
 print '<br>';
