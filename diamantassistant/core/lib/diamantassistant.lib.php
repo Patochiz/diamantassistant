@@ -27,9 +27,15 @@ function diamantassistant_get_widget_html(): string
     $jsUrl = dol_buildpath('/diamantassistant/js/chatbot.js', 1);
     $ajaxUrl = dol_buildpath('/diamantassistant/ajax/chat.php', 1);
 
-    $html = '<link rel="stylesheet" href="'.$cssUrl.'">';
+    // Cache-busting : append file mtime pour forcer le rechargement après update.
+    $cssPath = dol_buildpath('/diamantassistant/css/chatbot.css', 0);
+    $jsPath  = dol_buildpath('/diamantassistant/js/chatbot.js', 0);
+    $cssVer  = @filemtime($cssPath) ?: time();
+    $jsVer   = @filemtime($jsPath)  ?: time();
+
+    $html = '<link rel="stylesheet" href="'.$cssUrl.'?v='.$cssVer.'">';
     $html .= '<script>window.DIAMANTASSISTANT_AJAX_URL = '.json_encode($ajaxUrl).';</script>';
-    $html .= '<script src="'.$jsUrl.'" defer></script>';
+    $html .= '<script src="'.$jsUrl.'?v='.$jsVer.'" defer></script>';
 
     return $html;
 }

@@ -106,6 +106,42 @@
         return html;
     }
 
+    // Capture un instantané léger de la page courante pour que l'IA puisse
+    // le consulter via l'outil read_current_page (si elle juge utile).
+    // Pas de coût en tokens tant que l'IA n'appelle pas l'outil.
+    function capturePageSnapshot() {
+        var MAX_TEXT = 3000;
+
+        // Titre de la fiche Dolibarr si disponible, sinon <h1>
+        var headingEl = document.querySelector('.fichecenter .titre')
+            || document.querySelector('.titre_page')
+            || document.querySelector('.titre')
+            || document.querySelector('h1');
+        var heading = headingEl ? (headingEl.innerText || headingEl.textContent || '').trim() : '';
+
+        // Contenu principal : préférer #mainbody (Dolibarr), puis .fichecenter, sinon <main>
+        var mainEl = document.getElementById('mainbody')
+            || document.querySelector('.fichecenter')
+            || document.querySelector('main')
+            || document.body;
+        var text = mainEl ? (mainEl.innerText || mainEl.textContent || '') : '';
+        // Normaliser : retirer les espaces multiples et les lignes vides
+        text = text.replace(/[ \t]+/g, ' ').replace(/\n{2,}/g, '\n').trim();
+        var truncated = false;
+        if (text.length > MAX_TEXT) {
+            text = text.substring(0, MAX_TEXT);
+            truncated = true;
+        }
+
+        return {
+            url: window.location.pathname + window.location.search,
+            title: (document.title || '').trim(),
+            heading: heading,
+            text: text,
+            truncated: truncated
+        };
+    }
+
     function sendMessage() {
         if (isSending) return;
         var input = document.getElementById('da-chat-input');
@@ -122,7 +158,8 @@
         var payload = {
             question: question,
             conversation_id: conversationId,
-            page_context: 'URL: ' + window.location.pathname + window.location.search
+            page_context: 'URL: ' + window.location.pathname + window.location.search,
+            page_snapshot: capturePageSnapshot()
         };
 
         fetch(AJAX_URL, {
