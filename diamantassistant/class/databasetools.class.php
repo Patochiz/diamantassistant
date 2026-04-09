@@ -32,6 +32,23 @@ class DatabaseTools
             [
                 'type' => 'function',
                 'function' => [
+                    'name' => 'read_knowledge_file',
+                    'description' => 'Lit le contenu intégral d\'un document de la base de connaissance interne DIAMANT (fichiers .md listés dans la section BASE DE CONNAISSANCE DISPONIBLE du prompt système). Utilise cet outil dès qu\'une question touche à un sujet couvert par l\'un de ces documents — par exemple process internes, conventions de nommage, procédures. Passe le nom du document (sans extension .md).',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => [
+                            'name' => [
+                                'type' => 'string',
+                                'description' => 'Nom du document à lire (ex: "diamant-workflows"), tel qu\'indiqué dans l\'index de la base de connaissance. Sans l\'extension .md.',
+                            ],
+                        ],
+                        'required' => ['name'],
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
                     'name' => 'search_orders',
                     'description' => 'Recherche des commandes clients dans Dolibarr par référence de commande ou nom de client. Retourne les 10 dernières correspondances avec date, montant HT/TTC et statut.',
                     'parameters' => [

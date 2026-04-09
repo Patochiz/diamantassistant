@@ -121,12 +121,27 @@ $messages = $builder->build($user, $question, $history, $pageContext);
 // --- Appel au provider avec accès base de données en lecture seule
 try {
     $provider     = ProviderFactory::get();
-    $toolExecutor = function (string $toolName, array $args) use ($db, $conf, $pageSnapshot) {
+    $toolExecutor = function (string $toolName, array $args) use ($db, $conf, $pageSnapshot, $builder) {
         if ($toolName === 'read_current_page') {
             if ($pageSnapshot === null) {
                 return json_encode(['error' => 'Aucune information sur la page courante n\'a été transmise par le navigateur.'], JSON_UNESCAPED_UNICODE);
             }
             return json_encode($pageSnapshot, JSON_UNESCAPED_UNICODE);
+        }
+        if ($toolName === 'read_knowledge_file') {
+            $name    = (string) ($args['name'] ?? '');
+            $content = $builder->getKnowledgeFile($name);
+            if ($content === null) {
+                $available = array_column($builder->listKnowledgeFiles(), 'name');
+                return json_encode([
+                    'error'     => 'Document de la base de connaissance introuvable : '.$name,
+                    'available' => $available,
+                ], JSON_UNESCAPED_UNICODE);
+            }
+            return json_encode([
+                'name'    => $name,
+                'content' => $content,
+            ], JSON_UNESCAPED_UNICODE);
         }
         return DatabaseTools::execute($toolName, $args, $db, $conf);
     };

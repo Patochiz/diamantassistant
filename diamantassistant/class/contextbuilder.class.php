@@ -54,10 +54,10 @@ class ContextBuilder
         // 1. Identité et ton du bot
         $parts[] = $this->getIdentitySection();
 
-        // 2. Base de connaissance (fichiers .md)
-        $knowledge = $this->loadKnowledgeBase();
-        if (!empty($knowledge)) {
-            $parts[] = "## BASE DE CONNAISSANCE\n\n".$knowledge;
+        // 2. Index de la base de connaissance (contenu chargé à la demande via l'outil read_knowledge_file)
+        $knowledgeIndex = $this->loadKnowledgeIndex();
+        if (!empty($knowledgeIndex)) {
+            $parts[] = "## BASE DE CONNAISSANCE DISPONIBLE\n\n".$knowledgeIndex;
         }
 
         // 3. Contexte utilisateur
@@ -126,30 +126,118 @@ TXT;
     }
 
     /**
-     * Charge tous les fichiers .md du dossier knowledge/ et les concatène.
+     * Construit un index compact des fichiers .md disponibles (nom + résumé court).
+     * Cet index remplace l'injection du contenu complet dans le prompt système :
+     * l'IA lit les fichiers à la demande via l'outil read_knowledge_file.
      */
-    private function loadKnowledgeBase(): string
+    private function loadKnowledgeIndex(): string
     {
-        if (!is_dir($this->knowledgeDir)) {
-            return '';
-        }
-
-        $files = glob($this->knowledgeDir.'/*.md');
+        $files = $this->listKnowledgeFiles();
         if (empty($files)) {
             return '';
         }
 
-        sort($files);
-        $content = '';
-        foreach ($files as $file) {
-            $name = basename($file, '.md');
-            $fileContent = @file_get_contents($file);
-            if ($fileContent !== false) {
-                $content .= "### ".$name."\n\n".trim($fileContent)."\n\n";
-            }
+        $lines = [];
+        $lines[] = 'Les documents suivants peuvent être lus à la demande via l\'outil `read_knowledge_file(name)` en passant le nom indiqué (sans extension) :';
+        $lines[] = '';
+        foreach ($files as $f) {
+            $summary = $f['summary'] !== '' ? ' — '.$f['summary'] : '';
+            $lines[] = '- **'.$f['name'].'**'.$summary;
         }
+        $lines[] = '';
+        $lines[] = 'Utilise `read_knowledge_file` dès qu\'une question touche à l\'un de ces sujets.';
+        return implode("\n", $lines);
+    }
 
-        return trim($content);
+    /**
+     * Liste les fichiers .md du dossier knowledge avec un résumé court.
+     * Le résumé est la première ligne non vide du fichier (titre Markdown ou
+     * première phrase), tronquée à 140 caractères.
+     *
+     * @return array<int, array{name: string, summary: string}>
+     */
+    public function listKnowledgeFiles(): array
+    {
+        if (!is_dir($this->knowledgeDir)) {
+            return [];
+        }
+        $files = glob($this->knowledgeDir.'/*.md');
+        if (empty($files)) {
+            return [];
+        }
+        sort($files);
+
+        $out = [];
+        foreach ($files as $file) {
+            $name    = basename($file, '.md');
+            $raw     = @file_get_contents($file);
+            $summary = '';
+            if (is_string($raw)) {
+                foreach (preg_split('/\r?\n/', $raw) as $line) {
+                    $line = trim($line);
+                    if ($line === '') {
+                        continue;
+                    }
+                    // Retire les marqueurs Markdown de titre (# ## ###) pour un résumé propre
+                    $summary = ltrim($line, "# \t");
+                    break;
+                }
+                if (mb_strlen($summary) > 140) {
+                    $summary = mb_substr($summary, 0, 137).'...';
+                }
+            }
+            $out[] = ['name' => $name, 'summary' => $summary];
+        }
+        return $out;
+    }
+
+    /**
+     * Lit le contenu d'un fichier .md du dossier knowledge par son nom.
+     * Utilisé par le tool executor quand l'IA appelle read_knowledge_file.
+     *
+     * @param string $rawName  Nom de fichier saisi par l'IA (avec ou sans extension)
+     * @return string|null     Contenu du fichier, ou null si nom invalide / introuvable
+     */
+    public function getKnowledgeFile(string $rawName): ?string
+    {
+        $filename = self::sanitizeKnowledgeFilename($rawName);
+        if ($filename === null) {
+            return null;
+        }
+        $fullPath = $this->knowledgeDir.'/'.$filename;
+        $realDir  = realpath($this->knowledgeDir);
+        $realFile = realpath($fullPath);
+        if ($realDir === false || $realFile === false) {
+            return null;
+        }
+        // Défense-en-profondeur : le fichier doit bien être dans knowledgeDir
+        if (strpos($realFile, $realDir.DIRECTORY_SEPARATOR) !== 0) {
+            return null;
+        }
+        $content = @file_get_contents($realFile);
+        return $content === false ? null : $content;
+    }
+
+    /**
+     * Normalise et valide un nom de fichier .md pour la base de connaissance.
+     * Règles : whitelist [A-Za-z0-9_-], 1 à 64 caractères, extension .md ajoutée.
+     *
+     * @param string $raw Valeur brute (ex: "foo", "foo.md", "../escape")
+     * @return string|null "foo.md" si valide, null sinon
+     */
+    public static function sanitizeKnowledgeFilename(string $raw): ?string
+    {
+        $name = trim($raw);
+        if ($name === '') {
+            return null;
+        }
+        if (preg_match('/\.md$/i', $name)) {
+            $name = substr($name, 0, -3);
+        }
+        if (!preg_match('/^[A-Za-z0-9_-]{1,64}$/', $name)) {
+            return null;
+        }
+        return $name.'.md';
     }
 
     /**
