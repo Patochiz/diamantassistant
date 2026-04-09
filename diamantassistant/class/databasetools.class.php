@@ -21,6 +21,17 @@ class DatabaseTools
             [
                 'type' => 'function',
                 'function' => [
+                    'name' => 'read_current_page',
+                    'description' => 'Lit le contenu de la page Dolibarr actuellement affichée à l\'écran par l\'utilisateur (titre, entête de fiche, texte principal). Utilise cet outil dès que l\'utilisateur fait référence à ce qu\'il voit (« cette page », « cette fiche », « ici », « à l\'écran », « ce produit », etc.) ou quand la question est ambiguë sans ce contexte. Aucun paramètre.',
+                    'parameters' => [
+                        'type' => 'object',
+                        'properties' => new stdClass(),
+                    ],
+                ],
+            ],
+            [
+                'type' => 'function',
+                'function' => [
                     'name' => 'search_orders',
                     'description' => 'Recherche des commandes clients dans Dolibarr par référence de commande ou nom de client. Retourne les 10 dernières correspondances avec date, montant HT/TTC et statut.',
                     'parameters' => [

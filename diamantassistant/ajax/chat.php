@@ -56,6 +56,21 @@ $question = trim((string) ($input['question'] ?? ''));
 $conversationId = (int) ($input['conversation_id'] ?? 0);
 $pageContext = trim((string) ($input['page_context'] ?? ''));
 
+// Snapshot léger de la page courante capturé côté JS. N'est PAS injecté dans
+// le prompt système : il n'est renvoyé à l'IA que si celle-ci appelle
+// l'outil read_current_page (économie de tokens).
+$pageSnapshot = null;
+if (isset($input['page_snapshot']) && is_array($input['page_snapshot'])) {
+    $snap = $input['page_snapshot'];
+    $pageSnapshot = [
+        'url'       => mb_substr((string) ($snap['url'] ?? ''), 0, 500),
+        'title'     => mb_substr((string) ($snap['title'] ?? ''), 0, 300),
+        'heading'   => mb_substr((string) ($snap['heading'] ?? ''), 0, 300),
+        'text'      => mb_substr((string) ($snap['text'] ?? ''), 0, 5000),
+        'truncated' => !empty($snap['truncated']),
+    ];
+}
+
 if (empty($question)) {
     http_response_code(400);
     echo json_encode(['error' => 'Question vide.']);
@@ -103,7 +118,13 @@ $messages = $builder->build($user, $question, $history, $pageContext);
 // --- Appel au provider avec accès base de données en lecture seule
 try {
     $provider     = ProviderFactory::get();
-    $toolExecutor = function (string $toolName, array $args) use ($db, $conf) {
+    $toolExecutor = function (string $toolName, array $args) use ($db, $conf, $pageSnapshot) {
+        if ($toolName === 'read_current_page') {
+            if ($pageSnapshot === null) {
+                return json_encode(['error' => 'Aucune information sur la page courante n\'a été transmise par le navigateur.'], JSON_UNESCAPED_UNICODE);
+            }
+            return json_encode($pageSnapshot, JSON_UNESCAPED_UNICODE);
+        }
         return DatabaseTools::execute($toolName, $args, $db, $conf);
     };
     $reply        = $provider->chat($messages, [
