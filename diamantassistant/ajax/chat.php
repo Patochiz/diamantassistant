@@ -69,6 +69,9 @@ if (isset($input['page_snapshot']) && is_array($input['page_snapshot'])) {
         'text'      => mb_substr((string) ($snap['text'] ?? ''), 0, 5000),
         'truncated' => !empty($snap['truncated']),
     ];
+    dol_syslog('DiamantAssistant page_snapshot received: title='.$pageSnapshot['title'].' heading='.$pageSnapshot['heading'].' text_len='.mb_strlen($pageSnapshot['text']), LOG_DEBUG);
+} else {
+    dol_syslog('DiamantAssistant page_snapshot MISSING from payload (keys: '.implode(',', array_keys($input)).')', LOG_DEBUG);
 }
 
 if (empty($question)) {
