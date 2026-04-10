@@ -97,6 +97,9 @@
             if (url.indexOf('http://') === 0 || url.indexOf('https://') === 0) {
                 return '<a href="' + url + '" target="_blank" rel="noopener noreferrer">' + linkText + '</a>';
             }
+            if (url.indexOf('/') === 0) {
+                return '<a href="' + url + '">' + linkText + '</a>';
+            }
             return match;
         });
         // Listes en tirets simples (ligne par ligne)
