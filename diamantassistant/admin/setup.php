@@ -207,5 +207,12 @@ print 'Définissez vos propres requêtes SQL en lecture seule que l\'IA pourra u
 print ' <a href="tools.php" class="button" style="margin-left:10px">Gérer les outils →</a>';
 print '</div>';
 
+print '<br>';
+print '<div style="padding:12px;background:#f0f4ff;border:1px solid #c0cfe8;border-radius:4px">';
+print '<strong>Auto-vérification avant validation</strong><br>';
+print 'Configurez la vérification IA automatique au moment de valider un document (commandes, devis, expéditions...).';
+print ' <a href="autoverif.php" class="button" style="margin-left:10px">Configurer l\'auto-vérification →</a>';
+print '</div>';
+
 llxFooter();
 $db->close();

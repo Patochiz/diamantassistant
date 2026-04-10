@@ -241,6 +241,16 @@ TXT;
     }
 
     /**
+     * Charge le contenu du fichier autoverif.md pour l'auto-vérification.
+     *
+     * @return string|null  Contenu du fichier, ou null si inexistant
+     */
+    public function getAutoVerifRules(): ?string
+    {
+        return $this->getKnowledgeFile('autoverif');
+    }
+
+    /**
      * Retourne un résumé du contexte utilisateur Dolibarr.
      */
     private function getUserContext($user): string

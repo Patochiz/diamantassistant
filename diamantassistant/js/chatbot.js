@@ -188,6 +188,17 @@
         });
     }
 
+    // --- API publique pour autoverif.js et autres scripts du module ---
+    window.DiamantAssistant = {
+        openChat: function () {
+            var win = document.getElementById('da-chat-window');
+            if (win && win.classList.contains('da-hidden')) {
+                win.classList.remove('da-hidden');
+            }
+        },
+        addMessage: addMessage
+    };
+
     // --- Init au chargement ---
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', createWidget);

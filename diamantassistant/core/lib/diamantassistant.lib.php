@@ -37,5 +37,26 @@ function diamantassistant_get_widget_html(): string
     $html .= '<script>window.DIAMANTASSISTANT_AJAX_URL = '.json_encode($ajaxUrl).';</script>';
     $html .= '<script src="'.$jsUrl.'?v='.$jsVer.'" defer></script>';
 
+    // Auto-verification : injecter la config et le script si active
+    $autoverifEnabled = (int) getDolGlobalString('DIAMANTASSISTANT_AUTOVERIF_ENABLED', 0);
+    if ($autoverifEnabled) {
+        $autoverifModules = getDolGlobalString('DIAMANTASSISTANT_AUTOVERIF_MODULES', '');
+        $modulesArray = !empty($autoverifModules) ? explode(',', $autoverifModules) : [];
+
+        if (!empty($modulesArray)) {
+            $autoverifAjaxUrl = dol_buildpath('/diamantassistant/ajax/autoverif.php', 1);
+            $autoverifJsUrl   = dol_buildpath('/diamantassistant/js/autoverif.js', 1);
+            $autoverifJsPath  = dol_buildpath('/diamantassistant/js/autoverif.js', 0);
+            $autoverifJsVer   = @filemtime($autoverifJsPath) ?: time();
+
+            $html .= '<script>window.DIAMANTASSISTANT_AUTOVERIF = '.json_encode([
+                'enabled' => true,
+                'modules' => $modulesArray,
+                'ajaxUrl' => $autoverifAjaxUrl,
+            ]).';</script>';
+            $html .= '<script src="'.$autoverifJsUrl.'?v='.$autoverifJsVer.'" defer></script>';
+        }
+    }
+
     return $html;
 }

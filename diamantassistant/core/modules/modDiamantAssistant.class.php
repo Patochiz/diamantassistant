@@ -71,6 +71,8 @@ class modDiamantAssistant extends DolibarrModules
             3 => array('DIAMANTASSISTANT_RATE_LIMIT_PER_MIN', 'chaine', '10', 'Messages max par minute et par utilisateur', 0),
             4 => array('DIAMANTASSISTANT_ENABLED_WIDGET', 'chaine', '1', 'Widget chat activé', 0),
             5 => array('DIAMANTASSISTANT_LOG_CONVERSATIONS', 'chaine', '1', 'Logger les conversations', 0),
+            6 => array('DIAMANTASSISTANT_AUTOVERIF_ENABLED', 'chaine', '0', 'Auto-vérification IA avant validation activée', 0),
+            7 => array('DIAMANTASSISTANT_AUTOVERIF_MODULES', 'chaine', '', 'Modules concernés par l\'auto-vérification (commande,propal,...)', 0),
         );
 
         // New pages on tabs
