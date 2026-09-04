@@ -18,6 +18,8 @@ class MistralProvider implements AIProvider
     private string $endpoint = 'https://api.mistral.ai/v1/chat/completions';
     private int $lastTokensUsed = 0;
     private int $timeout = 60;
+    private int $maxRetries = 3;
+    private array $retryDelays = [1, 3, 6];
 
     public function __construct(string $apiKey, string $model = 'mistral-small-latest')
     {
@@ -63,6 +65,9 @@ class MistralProvider implements AIProvider
         // Boucle tool-calling : l'IA peut demander plusieurs outils successifs.
         // On limite à 5 tours pour éviter toute boucle infinie.
         for ($i = 0; $i < 5; $i++) {
+            if ($i > 0) {
+                usleep(500000);
+            }
             $response = $this->callApi($payload);
 
             $choice       = $response['choices'][0];
@@ -112,6 +117,7 @@ class MistralProvider implements AIProvider
 
     /**
      * Effectue un appel cURL vers l'API Mistral et retourne le tableau décodé.
+     * Réessaie automatiquement avec backoff exponentiel sur HTTP 429 et 503.
      *
      * @param array $payload
      * @return array
@@ -119,48 +125,80 @@ class MistralProvider implements AIProvider
      */
     private function callApi(array $payload): array
     {
-        $ch = curl_init($this->endpoint);
-        curl_setopt_array($ch, [
-            CURLOPT_POST          => true,
-            CURLOPT_RETURNTRANSFER => true,
-            CURLOPT_TIMEOUT       => $this->timeout,
-            CURLOPT_POSTFIELDS    => json_encode($payload),
-            CURLOPT_HTTPHEADER    => [
-                'Content-Type: application/json',
-                'Accept: application/json',
-                'Authorization: Bearer '.$this->apiKey,
-            ],
-        ]);
+        $jsonPayload = json_encode($payload);
 
-        $response  = curl_exec($ch);
-        $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
-        $curlError = curl_error($ch);
-        curl_close($ch);
+        for ($attempt = 0; $attempt <= $this->maxRetries; $attempt++) {
+            $responseHeaders = [];
+            $ch = curl_init($this->endpoint);
+            curl_setopt_array($ch, [
+                CURLOPT_POST           => true,
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT        => $this->timeout,
+                CURLOPT_POSTFIELDS     => $jsonPayload,
+                CURLOPT_HTTPHEADER     => [
+                    'Content-Type: application/json',
+                    'Accept: application/json',
+                    'Authorization: Bearer '.$this->apiKey,
+                ],
+                CURLOPT_HEADERFUNCTION => function ($ch, $header) use (&$responseHeaders) {
+                    $parts = explode(':', $header, 2);
+                    if (count($parts) === 2) {
+                        $responseHeaders[strtolower(trim($parts[0]))] = trim($parts[1]);
+                    }
+                    return strlen($header);
+                },
+            ]);
 
-        if ($response === false) {
-            throw new Exception('Erreur cURL Mistral : '.$curlError);
-        }
+            $response  = curl_exec($ch);
+            $httpCode  = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+            $curlError = curl_error($ch);
+            curl_close($ch);
 
-        if ($httpCode === 429) {
-            throw new Exception('Limite de requêtes Mistral atteinte. Réessayez dans quelques secondes.');
-        }
-
-        if ($httpCode !== 200) {
-            $errMsg  = 'HTTP '.$httpCode;
-            $decoded = json_decode($response, true);
-            if (is_array($decoded) && isset($decoded['message'])) {
-                $errMsg .= ' — '.$decoded['message'];
-            } elseif (is_array($decoded) && isset($decoded['error']['message'])) {
-                $errMsg .= ' — '.$decoded['error']['message'];
+            if ($response === false) {
+                throw new Exception('Erreur cURL Mistral : '.$curlError);
             }
-            throw new Exception('Erreur API Mistral : '.$errMsg);
+
+            if (in_array($httpCode, [429, 503]) && $attempt < $this->maxRetries) {
+                $delay = $this->getRetryDelay($attempt, $responseHeaders);
+                dol_syslog("DiamantAssistant Mistral HTTP $httpCode, retry ".($attempt + 1)."/{$this->maxRetries} après {$delay}s", LOG_WARNING);
+                sleep($delay);
+                continue;
+            }
+
+            if ($httpCode === 429) {
+                throw new Exception('Limite de requêtes Mistral atteinte malgré plusieurs tentatives. Réessayez dans une minute.');
+            }
+
+            if ($httpCode !== 200) {
+                $errMsg  = 'HTTP '.$httpCode;
+                $decoded = json_decode($response, true);
+                if (is_array($decoded) && isset($decoded['message'])) {
+                    $errMsg .= ' — '.$decoded['message'];
+                } elseif (is_array($decoded) && isset($decoded['error']['message'])) {
+                    $errMsg .= ' — '.$decoded['error']['message'];
+                }
+                throw new Exception('Erreur API Mistral : '.$errMsg);
+            }
+
+            $data = json_decode($response, true);
+            if (!is_array($data) || !isset($data['choices'][0]['message'])) {
+                throw new Exception('Réponse Mistral invalide.');
+            }
+
+            return $data;
         }
 
-        $data = json_decode($response, true);
-        if (!is_array($data) || !isset($data['choices'][0]['message'])) {
-            throw new Exception('Réponse Mistral invalide.');
-        }
+        throw new Exception('Limite de requêtes Mistral atteinte malgré plusieurs tentatives. Réessayez dans une minute.');
+    }
 
-        return $data;
+    /**
+     * Calcule le délai avant retry : header Retry-After si disponible, sinon backoff.
+     */
+    private function getRetryDelay(int $attempt, array $headers): int
+    {
+        if (!empty($headers['retry-after'])) {
+            return min((int) $headers['retry-after'], 30);
+        }
+        return $this->retryDelays[$attempt] ?? 6;
     }
 }
