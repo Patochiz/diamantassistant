@@ -17,9 +17,9 @@ class MistralProvider implements AIProvider
     private string $model;
     private string $endpoint = 'https://api.mistral.ai/v1/chat/completions';
     private int $lastTokensUsed = 0;
-    private int $timeout = 60;
-    private int $maxRetries = 3;
-    private array $retryDelays = [1, 3, 6];
+    private int $timeout = 120;
+    private int $maxRetries = 4;
+    private array $retryDelays = [2, 5, 15, 30];
 
     public function __construct(string $apiKey, string $model = 'mistral-small-latest')
     {
@@ -66,7 +66,7 @@ class MistralProvider implements AIProvider
         // On limite à 5 tours pour éviter toute boucle infinie.
         for ($i = 0; $i < 5; $i++) {
             if ($i > 0) {
-                usleep(500000);
+                usleep(1100000);
             }
             $response = $this->callApi($payload);
 
@@ -197,8 +197,8 @@ class MistralProvider implements AIProvider
     private function getRetryDelay(int $attempt, array $headers): int
     {
         if (!empty($headers['retry-after'])) {
-            return min((int) $headers['retry-after'], 30);
+            return min((int) $headers['retry-after'], 65);
         }
-        return $this->retryDelays[$attempt] ?? 6;
+        return $this->retryDelays[$attempt] ?? 30;
     }
 }
