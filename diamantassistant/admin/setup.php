@@ -149,6 +149,7 @@ print '</td></tr>';
 print '<tr class="oddeven"><td>Modèle Mistral</td><td>';
 print '<select name="mistral_model">';
 $models = [
+    'ministral-8b-2512' => 'Ministral 8B (très économique, tâches simples)',
     'mistral-small-latest' => 'Mistral Small (recommandé, rapide, économique)',
     'mistral-medium-latest' => 'Mistral Medium (équilibré)',
     'mistral-large-latest' => 'Mistral Large (plus précis, plus lent)',
